@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Nano35.Contracts.Storage.Artifacts;
+using Nano35.Files.Api.Services;
 
 namespace Nano35.Files.Api.Controllers
 {
@@ -20,9 +21,11 @@ namespace Nano35.Files.Api.Controllers
         ControllerBase
     {
         private IWebHostEnvironment _hostingEnvironment;
-        public ImagesController(IWebHostEnvironment hostingEnvironment)
+        private readonly ApplicationContext _context;
+        public ImagesController(IWebHostEnvironment hostingEnvironment, ApplicationContext context)
         {
             _hostingEnvironment = hostingEnvironment;
+            _context = context;
         }
 
         public class Test
@@ -33,21 +36,23 @@ namespace Nano35.Files.Api.Controllers
         
         [HttpPost]
         [Route("CreateStorageItemImage")]
+        [RequestSizeLimit(45000000)]
         public async Task<IActionResult> GetAllArticles()
         {    
+            // https://www.thecodehubs.com/file-upload-in-angular-7-with-asp-net-core-web-api/
             try
             {
                 var headers = Request.Headers["id"].ToString();
-                var folderName = "Static\\StorageItems";
-                var webRootPath = _hostingEnvironment.ContentRootPath;
-                var newPath = Path.Combine(webRootPath, folderName);
+                var newPath = Path.Combine(_hostingEnvironment.ContentRootPath, "Static\\StorageItems");
                 if (!Directory.Exists(newPath))
                 {
                     Directory.CreateDirectory(newPath);
                 }
 
-                var old = Directory.EnumerateFiles(newPath, "*", SearchOption.AllDirectories)
+                var old = Directory
+                    .EnumerateFiles(newPath, "*", SearchOption.AllDirectories)
                     .Where(c => c.Contains(headers));
+                
                 foreach (var item in old)
                 {
                     System.IO.File.Delete(item);
@@ -57,20 +62,32 @@ namespace Nano35.Files.Api.Controllers
                 {
                     if (Request.Form.Files[i].Length > 0)
                     {
-                        string fileName = ContentDispositionHeaderValue.Parse(Request.Form.Files[i].ContentDisposition).FileName.Trim('"').Split(".").Last();
-                        var name = $"{i}_{headers}.{fileName}";
-                        string fullPath = Path.Combine(newPath, name);
-                        using (var stream = new FileStream(fullPath, FileMode.Create))
-                        {
-                            Request.Form.Files[i].CopyTo(stream);
-                        }
+                        var fileName = ContentDispositionHeaderValue.Parse(Request.Form.Files[i].ContentDisposition).FileName
+                            .Trim('"')
+                            .Split(".")
+                            .Last();
+                        
+                        var fullPath = Path.Combine(newPath, $"{i}_{headers}.{fileName}");
+                        
+                        await using var stream = new FileStream(fullPath, FileMode.Create);
+                        
+                        await Request.Form.Files[i].CopyToAsync(stream);
                     }
                 }
+
+                this._context.ImagesOfStorageItems
+                    .Add(new ImagesOfStorageItem()
+                    {
+                        Confirmed = false,
+                        Uploaded = DateTime.Now, 
+                        StorageItemId = Guid.Parse(headers)
+                    });
+                
                 return Ok("Upload Successful.");
             }
             catch (System.Exception ex)
             {
-                return Ok("Upload Failed: " + ex.Message);
+                return BadRequest("Upload Failed: " + ex.Message);
             }
         }
     }
