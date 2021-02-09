@@ -14,8 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Configurators" />
-    <Folder Include="static\Docs" />
+    <Folder Include="Static\StorageItems" />
   </ItemGroup>
 
 </Project>
