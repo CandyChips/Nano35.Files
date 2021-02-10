@@ -20,18 +20,12 @@ namespace Nano35.Files.Api.Controllers
     public class ImagesController :
         ControllerBase
     {
-        private IWebHostEnvironment _hostingEnvironment;
+        private readonly IWebHostEnvironment _hostingEnvironment;
         private readonly ApplicationContext _context;
         public ImagesController(IWebHostEnvironment hostingEnvironment, ApplicationContext context)
         {
             _hostingEnvironment = hostingEnvironment;
             _context = context;
-        }
-
-        public class Test
-        {
-            public IFormFileCollection Files { get; set; }
-            public Guid Id { get; set; }
         }
         
         [HttpPost]
@@ -75,13 +69,14 @@ namespace Nano35.Files.Api.Controllers
                     }
                 }
 
-                this._context.ImagesOfStorageItems
-                    .Add(new ImagesOfStorageItem()
+                await _context.ImagesOfStorageItems
+                    .AddAsync(new ImagesOfStorageItem()
                     {
-                        Confirmed = false,
                         Uploaded = DateTime.Now, 
+                        IsConfirmed = false,
                         StorageItemId = Guid.Parse(headers)
                     });
+                await _context.SaveChangesAsync();
                 
                 return Ok("Upload Successful.");
             }

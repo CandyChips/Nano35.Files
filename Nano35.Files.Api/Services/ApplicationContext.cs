@@ -1,15 +1,7 @@
-using System;
 using Microsoft.EntityFrameworkCore;
 
 namespace Nano35.Files.Api.Services
 {
-    public class ImagesOfStorageItem
-    {
-        public Guid StorageItemId { get; set; }
-        public DateTime Uploaded { get; set; }
-        public bool Confirmed { get; set; }
-    }
-    
     public class ApplicationContext : DbContext
     {
         
@@ -24,6 +16,13 @@ namespace Nano35.Files.Api.Services
         public void Update()
         {
             ImagesOfStorageItems.Load();
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            new ImagesOfStorageItemFluentContext().Configure(modelBuilder);
+            
+            base.OnModelCreating(modelBuilder);
         }
     }
 }

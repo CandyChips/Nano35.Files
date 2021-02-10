@@ -34,7 +34,7 @@ namespace Nano35.Files.Api
 
             services.AddControllers();
             new Configurator(services, new CorsConfiguration()).Configure();
-            new Configurator(services, new EntityFrameworkConfiguration("192.168.100.120", "Nano35.Storage.DB", "sa", "Cerber666")).Configure();
+            new Configurator(services, new EntityFrameworkConfiguration("192.168.100.120", "Nano35.Files.DB", "sa", "Cerber666")).Configure();
             
             services.AddSwaggerGen(c =>
             {
