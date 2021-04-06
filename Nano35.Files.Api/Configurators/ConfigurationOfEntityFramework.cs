@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Nano35.Contracts;
 using Nano35.Files.Api.Services;
@@ -12,17 +13,13 @@ namespace Nano35.Files.Api.Configurators
         private readonly string _catalog;
         private readonly string _login;
         private readonly string _password;
-        
         public EntityFrameworkConfiguration(
-            string dbServer, 
-            string catalog, 
-            string login,
-            string password)
+            IConfiguration configuration)
         {
-            _dbServer = dbServer;
-            _catalog = catalog;
-            _login = login;
-            _password = password;
+            _dbServer = configuration["services:EntityFramework:Host"];
+            _catalog = configuration["services:EntityFramework:Database"];
+            _login = configuration["services:EntityFramework:Login"];
+            _password = configuration["services:EntityFramework:Password"];
         }
         public void AddToServices(
             IServiceCollection services)

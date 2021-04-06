@@ -5,8 +5,11 @@ namespace Nano35.Files.Api.Services
 {
     public class ImagesOfStorageItem
     {
+        public Guid Id { get; set; }
         public Guid StorageItemId { get; set; }
         public DateTime Uploaded { get; set; }
+        public string RealName { get; set; }
+        public string NormalizedName { get; set; }
         public bool IsConfirmed { get; set; }
     }
 
@@ -14,19 +17,24 @@ namespace Nano35.Files.Api.Services
     {
         public void Configure(ModelBuilder modelBuilder)
         {
-            // Primary key
             modelBuilder.Entity<ImagesOfStorageItem>()
-                .HasKey(u => new {u.StorageItemId});  
+                .HasKey(u => new {u.Id});  
             
-            // Data
+            modelBuilder.Entity<ImagesOfStorageItem>()
+                .Property(b => b.StorageItemId)
+                .IsRequired();
             modelBuilder.Entity<ImagesOfStorageItem>()
                 .Property(b => b.Uploaded)
                 .IsRequired();
             modelBuilder.Entity<ImagesOfStorageItem>()
                 .Property(b => b.IsConfirmed)
                 .IsRequired();
-            
-            // Foreign keys
+            modelBuilder.Entity<ImagesOfStorageItem>()
+                .Property(b => b.RealName)
+                .IsRequired();
+            modelBuilder.Entity<ImagesOfStorageItem>()
+                .Property(b => b.NormalizedName)
+                .IsRequired();
         }
     }
 }

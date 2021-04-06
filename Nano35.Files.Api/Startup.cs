@@ -21,12 +21,13 @@ namespace Nano35.Files.Api
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        private IConfiguration Configuration { get; }
+        
+        public Startup()
         {
-            Configuration = configuration;
+            var builder = new ConfigurationBuilder().AddJsonFile("ServicesConfig.json");
+            Configuration = builder.Build();
         }
-
-        public IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
@@ -34,7 +35,7 @@ namespace Nano35.Files.Api
 
             services.AddControllers();
             new Configurator(services, new CorsConfiguration()).Configure();
-            new Configurator(services, new EntityFrameworkConfiguration("192.168.100.120", "Nano35.Files.DB", "sa", "Cerber666")).Configure();
+            new Configurator(services, new EntityFrameworkConfiguration(Configuration)).Configure();
             
             services.AddSwaggerGen(c =>
             {
@@ -53,22 +54,9 @@ namespace Nano35.Files.Api
             }
             app.UseCors("Cors");
             
-            app.UseStaticFiles(); // For the wwwroot folder
+            app.UseDirectoryBrowser();
+            app.UseStaticFiles();
 
-            app.UseStaticFiles(new StaticFileOptions()
-            {
-                FileProvider = new PhysicalFileProvider(
-                    Path.Combine(Directory.GetCurrentDirectory(), @"Static")),
-                RequestPath = new PathString("/MyImages")
-            });
-
-            app.UseDirectoryBrowser(new DirectoryBrowserOptions()
-            {
-                FileProvider = new PhysicalFileProvider(
-                    Path.Combine(Directory.GetCurrentDirectory(), @"Static")),
-                RequestPath = new PathString("/MyImages")
-            });
-            
             app.UseHttpsRedirection();
 
             app.UseRouting();

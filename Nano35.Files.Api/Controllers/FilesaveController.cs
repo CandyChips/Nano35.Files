@@ -1,55 +1,33 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Threading.Tasks;
-using MassTransit;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Nano35.Contracts.Storage.Artifacts;
-using Nano35.Files.Api.Services;
 
 namespace Nano35.Files.Api.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class ImagesController :
-        ControllerBase
+    public class FilesaveController : ControllerBase
     {
-        private readonly ILogger<ImagesController> _logger;
-        private readonly IWebHostEnvironment _hostingEnvironment;
-        private readonly ApplicationContext _context;
-        public ImagesController(
-            ILogger<ImagesController> logger, 
-            IWebHostEnvironment hostingEnvironment,
-            ApplicationContext context)
+        private readonly IWebHostEnvironment _env;
+        private readonly ILogger<FilesaveController> _logger;
+
+        public FilesaveController(IWebHostEnvironment env, 
+            ILogger<FilesaveController> logger)
         {
-            _logger = logger;
-            _hostingEnvironment = hostingEnvironment;
-            _context = context;
+            this._env = env;
+            this._logger = logger;
         }
 
-        [HttpGet]
-        [Route("GetItemsOfStorageItem")]
-        public async Task<ActionResult<IList<string>>> GetItemsOfStorageItem(
-            [FromQuery] Guid storageItem)
-        {
-            return _context.ImagesOfStorageItems
-                .Where(f => f.StorageItemId == storageItem)
-                .Select(e => e.NormalizedName)
-                .ToList();
-        }
-        
         [HttpPost]
-        [Route("CreateStorageItemImage")]
-        public async Task<ActionResult<IList<UploadResult>>> GetAllArticles(
-            [FromForm] IEnumerable<IFormFile> files, [FromQuery] Guid storageITemId)
-        {    
+        public async Task<ActionResult<IList<UploadResult>>> PostFile(
+            [FromForm] IEnumerable<IFormFile> files)
+        {
             var maxAllowedFiles = 3;
             long maxFileSize = 1024 * 1024 * 15;
             var filesProcessed = 0;
@@ -84,8 +62,8 @@ namespace Nano35.Files.Api.Controllers
                         try
                         {
                             var trustedFileNameForFileStorage = Path.GetRandomFileName();
-                            var path = Path.Combine(_hostingEnvironment.ContentRootPath, 
-                                "wwwroot", "StorageItems", 
+                            var path = Path.Combine(_env.ContentRootPath, 
+                                _env.EnvironmentName, "unsafe_uploads", 
                                 trustedFileNameForFileStorage);
                             await using MemoryStream ms = new();
                             await file.CopyToAsync(ms);
@@ -94,17 +72,6 @@ namespace Nano35.Files.Api.Controllers
                                 trustedFileNameForDisplay, path);
                             uploadResult.Uploaded = true;
                             uploadResult.StoredFileName = trustedFileNameForFileStorage;
-                            await _context.ImagesOfStorageItems.AddAsync(
-                                new ImagesOfStorageItem()
-                                {
-                                    Id = Guid.NewGuid(),
-                                    IsConfirmed = false,
-                                    Uploaded = DateTime.Now,
-                                    NormalizedName = trustedFileNameForFileStorage,
-                                    RealName = trustedFileNameForDisplay,
-                                    StorageItemId = storageITemId
-                                });
-                            await _context.SaveChangesAsync();
                         }
                         catch (IOException ex)
                         {
@@ -129,13 +96,5 @@ namespace Nano35.Files.Api.Controllers
 
             return new CreatedResult(resourcePath, uploadResults);
         }
-    }
-
-    public class UploadResult
-    {
-        public int ErrorCode { get; set; }
-        public string StoredFileName { get; set; }
-        public string FileName { get; set; }
-        public bool Uploaded { get; set; }
     }
 }
