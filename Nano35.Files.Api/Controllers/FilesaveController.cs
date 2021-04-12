@@ -20,8 +20,8 @@ namespace Nano35.Files.Api.Controllers
         public FilesaveController(IWebHostEnvironment env, 
             ILogger<FilesaveController> logger)
         {
-            this._env = env;
-            this._logger = logger;
+            _env = env;
+            _logger = logger;
         }
 
         [HttpPost]

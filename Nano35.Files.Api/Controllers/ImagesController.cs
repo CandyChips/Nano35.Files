@@ -10,6 +10,7 @@ using MassTransit;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Nano35.Contracts.Storage.Artifacts;
 using Nano35.Files.Api.Services;
@@ -35,14 +36,19 @@ namespace Nano35.Files.Api.Controllers
         }
 
         [HttpGet]
-        [Route("GetItemsOfStorageItem")]
-        public async Task<ActionResult<IList<string>>> GetItemsOfStorageItem(
+        [Route("GetImagesOfStorageItem")]
+        public async Task<ActionResult<IList<FileContentResult>>> GetImagesOfStorageItem(
             [FromQuery] Guid storageItem)
         {
-            return _context.ImagesOfStorageItems
-                .Where(f => f.StorageItemId == storageItem)
-                .Select(e => e.NormalizedName)
-                .ToList();
+            return Ok((await _context.ImagesOfStorageItems
+                    .Where(f => f.StorageItemId == storageItem)
+                    .ToListAsync())
+                    .Select(a =>
+                    {
+                        var fileBytes = System.IO.File.ReadAllBytes(
+                            Path.Combine(_hostingEnvironment.ContentRootPath, "wwwroot", "StorageItems", a.NormalizedName));
+                        return File(fileBytes, "application/force-download", a.RealName);
+                    }));
         }
         
         [HttpPost]
