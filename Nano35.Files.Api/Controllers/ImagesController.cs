@@ -1,18 +1,18 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Http.Headers;
+using System.Text;
 using System.Threading.Tasks;
-using MassTransit;
+using BarcodeLib;
+using iTextSharp.text;
+using iTextSharp.text.pdf;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Nano35.Contracts.Storage.Artifacts;
 using Nano35.Files.Api.Services;
 
 namespace Nano35.Files.Api.Controllers
@@ -34,27 +34,28 @@ namespace Nano35.Files.Api.Controllers
             _hostingEnvironment = hostingEnvironment;
             _context = context;
         }
-
+        
         [HttpGet]
         [Route("GetImagesOfStorageItem")]
-        public async Task<ActionResult<IList<FileContentResult>>> GetImagesOfStorageItem(
+        public async Task<ActionResult<IList<string>>> GetImagesOfStorageItem(
             [FromQuery] Guid storageItem)
         {
             return Ok((await _context.ImagesOfStorageItems
                     .Where(f => f.StorageItemId == storageItem)
                     .ToListAsync())
                     .Select(a =>
-                    {
-                        var fileBytes = System.IO.File.ReadAllBytes(
-                            Path.Combine(_hostingEnvironment.ContentRootPath, "wwwroot", "StorageItems", a.NormalizedName));
-                        return File(fileBytes, "application/force-download", a.RealName);
-                    }));
+                        File(System.IO.File.ReadAllBytes(
+                            Path.Combine(_hostingEnvironment.ContentRootPath, "wwwroot", "StorageItems", a.NormalizedName)),
+                            "application/force-download",
+                            a.RealName))
+                    .Select(a => Convert.ToBase64String(a.FileContents)));
         }
         
         [HttpPost]
         [Route("CreateStorageItemImage")]
         public async Task<ActionResult<IList<UploadResult>>> GetAllArticles(
-            [FromForm] IEnumerable<IFormFile> files, [FromQuery] Guid storageITemId)
+            [FromForm] IEnumerable<IFormFile> files, 
+            [FromQuery] Guid storageITemId)
         {    
             var maxAllowedFiles = 3;
             long maxFileSize = 1024 * 1024 * 15;
@@ -67,46 +68,37 @@ namespace Nano35.Files.Api.Controllers
                 var uploadResult = new UploadResult();
                 var untrustedFileName = file.FileName;
                 uploadResult.FileName = untrustedFileName;
-                var trustedFileNameForDisplay = 
-                    WebUtility.HtmlEncode(untrustedFileName);
+                var trustedFileNameForDisplay = WebUtility.HtmlEncode(untrustedFileName);
+                var trustedFileNameForFileStorage = Path.GetRandomFileName().Split('.').First();
+                var storedName = $"{trustedFileNameForFileStorage}.{trustedFileNameForDisplay.Split('.').Last()}";
 
                 if (filesProcessed < maxAllowedFiles)
                 {
                     if (file.Length == 0)
                     {
-                        _logger.LogInformation("{FileName} length is 0", 
-                            trustedFileNameForDisplay);
                         uploadResult.ErrorCode = 1;
                     }
                     else if (file.Length > maxFileSize)
                     {
-                        _logger.LogInformation("{FileName} of {Length} bytes is " +
-                            "larger than the limit of {Limit} bytes", 
-                            trustedFileNameForDisplay, file.Length, maxFileSize);
                         uploadResult.ErrorCode = 2;
                     }
                     else
                     {
                         try
                         {
-                            var trustedFileNameForFileStorage = Path.GetRandomFileName();
-                            var path = Path.Combine(_hostingEnvironment.ContentRootPath, 
-                                "wwwroot", "StorageItems", 
-                                trustedFileNameForFileStorage);
+                            var path = Path.Combine(_hostingEnvironment.ContentRootPath, "wwwroot", "StorageItems", storedName);
                             await using MemoryStream ms = new();
                             await file.CopyToAsync(ms);
                             await System.IO.File.WriteAllBytesAsync(path, ms.ToArray());
-                            _logger.LogInformation("{FileName} saved at {Path}", 
-                                trustedFileNameForDisplay, path);
                             uploadResult.Uploaded = true;
-                            uploadResult.StoredFileName = trustedFileNameForFileStorage;
+                            uploadResult.StoredFileName = storedName;
                             await _context.ImagesOfStorageItems.AddAsync(
                                 new ImagesOfStorageItem()
                                 {
                                     Id = Guid.NewGuid(),
                                     IsConfirmed = false,
                                     Uploaded = DateTime.Now,
-                                    NormalizedName = trustedFileNameForFileStorage,
+                                    NormalizedName = storedName,
                                     RealName = trustedFileNameForDisplay,
                                     StorageItemId = storageITemId
                                 });
@@ -114,22 +106,15 @@ namespace Nano35.Files.Api.Controllers
                         }
                         catch (IOException ex)
                         {
-                            _logger.LogError("{FileName} error on upload: {Message}", 
-                                trustedFileNameForDisplay, ex.Message);
                             uploadResult.ErrorCode = 3;
                         }
                     }
-
                     filesProcessed++;
                 }
                 else
                 {
-                    _logger.LogInformation("{FileName} not uploaded because the " +
-                        "request exceeded the allowed {Count} of files", 
-                        trustedFileNameForDisplay, maxAllowedFiles);
                     uploadResult.ErrorCode = 4;
                 }
-
                 uploadResults.Add(uploadResult);
             }
 

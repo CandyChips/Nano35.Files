@@ -33,9 +33,15 @@ namespace Nano35.Files.Api.Configurators
                         e.Consumer<SubmitStorageItemConsumer>(provider);
                     });
                     
+                    cfg.ReceiveEndpoint("IGetImagesOfStorageItemRequestContract", e =>
+                    {
+                        e.Consumer<GetImagesOfStorageItemConsumer>(provider);
+                    });
+                    
                 }));
                 x.AddConsumer<RejectStorageItemImagesConsumer>();
                 x.AddConsumer<SubmitStorageItemConsumer>();
+                x.AddConsumer<GetImagesOfStorageItemConsumer>();
             });
             services.AddMassTransitHostedService();
         }

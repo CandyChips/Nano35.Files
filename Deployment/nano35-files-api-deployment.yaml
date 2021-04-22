@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nano35-files-api
+  namespace: nano35
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nano35-files-api
+  template:
+    metadata:
+      labels:
+        app: nano35-files-api
+    spec:
+      containers:
+      - image: bushemi2021/nano35.files.api:latest
+        name: nano35-files-api
+        ports:
+        - containerPort: 80
+      restartPolicy: Always
