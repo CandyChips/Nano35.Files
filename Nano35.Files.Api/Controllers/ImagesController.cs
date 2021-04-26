@@ -3,11 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
-using BarcodeLib;
-using iTextSharp.text;
-using iTextSharp.text.pdf;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -19,8 +15,7 @@ namespace Nano35.Files.Api.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class ImagesController :
-        ControllerBase
+    public class ImagesController : ControllerBase
     {
         private readonly ILogger<ImagesController> _logger;
         private readonly IWebHostEnvironment _hostingEnvironment;

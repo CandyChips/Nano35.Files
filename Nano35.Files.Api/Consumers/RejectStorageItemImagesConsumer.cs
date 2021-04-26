@@ -6,16 +6,9 @@ using Nano35.Contracts.Identity.Artifacts;
 
 namespace Nano35.Files.Api.Consumers
 {
-    public class RejectStorageItemImagesConsumer : 
-        IConsumer<IRejectStorageItemImagesRequestContract>
+    public class RejectStorageItemImagesConsumer :  IConsumer<IRejectStorageItemImagesRequestContract>
     {
-        public RejectStorageItemImagesConsumer()
-        {
-            
-        }
-        
-        public async Task Consume(
-            ConsumeContext<IRejectStorageItemImagesRequestContract> context)
+        public async Task Consume(ConsumeContext<IRejectStorageItemImagesRequestContract> context)
         {
             throw new NotImplementedException();
         }

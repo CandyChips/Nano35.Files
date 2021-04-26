@@ -10,19 +10,16 @@ using Nano35.Files.Api.Services;
 
 namespace Nano35.Files.Api.Consumers
 {
-    public class GetImagesOfStorageItemConsumer : 
-        IConsumer<IGetImagesOfStorageItemRequestContract>
+    public class GetImagesOfStorageItemConsumer : IConsumer<IGetImagesOfStorageItemRequestContract>
     {
         private readonly ApplicationContext _context;
         
-        public GetImagesOfStorageItemConsumer(
-            ApplicationContext context)
+        public GetImagesOfStorageItemConsumer(ApplicationContext context)
         {
             _context = context;
         }
         
-        public async Task Consume(
-            ConsumeContext<IGetImagesOfStorageItemRequestContract> context)
+        public async Task Consume(ConsumeContext<IGetImagesOfStorageItemRequestContract> context)
         {
             try
             {
@@ -31,6 +28,7 @@ namespace Nano35.Files.Api.Consumers
                     .Where(e => e.StorageItemId == context.Message.StorageItemId)
                     .Select(e => e.NormalizedName)
                     .ToListAsync();
+                
                 await context.RespondAsync(new GetImagesOfStorageItemSuccessResultContract() {Images = images});
             }
             catch (Exception e)

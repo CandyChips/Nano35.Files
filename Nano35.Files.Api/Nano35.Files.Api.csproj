@@ -5,8 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BarcodeLib" Version="2.3.0" />
-    <PackageReference Include="iTextSharp" Version="5.5.13.2" />
     <PackageReference Include="MassTransit" Version="7.2.0-develop.3288" />
     <PackageReference Include="MassTransit.AspNetCore" Version="7.2.0-develop.3288" />
     <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="7.2.0-develop.3288" />
